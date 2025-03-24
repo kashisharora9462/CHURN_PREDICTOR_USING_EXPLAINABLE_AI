@@ -1,0 +1,21 @@
+# requirements.txt
+
+# Core dependencies
+pandas>=2.0.0
+numpy>=1.24.0
+matplotlib>=3.7.0
+plotly>=5.14.0
+streamlit>=1.22.0
+
+# Machine learning and model persistence
+scikit-learn>=1.2.0
+joblib>=1.2.0
+
+# SHAP for explainability
+shap>=0.41.0
+
+# PDF generation
+reportlab>=3.6.0
+
+# Optional: for handling Excel files in batch prediction
+openpyxl>=3.1.0

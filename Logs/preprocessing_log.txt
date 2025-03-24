@@ -1,0 +1,6 @@
+Missing values before imputation: 11
+Missing values after imputation: 0
+Converted 'SeniorCitizen' to categorical.
+Removed 'customerID' column.
+Converted 'Churn' to binary (0/1).
+Processed dataset has 7043 rows and 20 columns.

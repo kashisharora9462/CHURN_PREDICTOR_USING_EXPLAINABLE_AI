@@ -730,9 +730,7 @@ def main():
         st.markdown("#### About")
         st.markdown("This app helps telecom companies predict customer churn using machine learning. Navigate using the buttons on the Home page to explore model insights or predict churn for a new customer.")
         st.markdown("---")
-        st.markdown("#### App Version")
-        st.markdown("Version 1.0.0")
-        st.markdown("Developed by [Your Name]")
+        st.markdown("Developed by Kashish Ahuja")
         
         st.markdown("---")
         st.markdown("#### Feedback")

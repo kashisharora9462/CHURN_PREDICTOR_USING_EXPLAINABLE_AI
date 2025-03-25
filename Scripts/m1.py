@@ -26,30 +26,11 @@ np.random.seed(42)
 
 # Paths to the pre-trained model, preprocessor, and precomputed outputs
 DATASET_PATH = "../Data/Raw/dataset.csv"
+MODEL_PATH = "../Models/random_forest_model.joblib"
+PREPROCESSOR_PATH = "../Models/preprocessor.joblib"
 
 
-# Dynamically resolve the path to the Models folder
-# __file__ is the path to m1.py, os.path.dirname(__file__) is Scripts/, and os.path.dirname of that is the root
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_PATH = os.path.join(BASE_DIR, "Models", "random_forest_model.joblib")
-PREPROCESSOR_PATH = os.path.join(BASE_DIR, "Models", "preprocessor.joblib")
-# Log the paths for debugging
-st.write(f"Attempting to load model from: {MODEL_PATH}")
-st.write(f"Attempting to load preprocessor from: {PREPROCESSOR_PATH}")
 
-# Check if files exist
-if not os.path.exists(MODEL_PATH) or not os.path.exists(PREPROCESSOR_PATH):
-    st.error(f"Model or preprocessor file not found at {MODEL_PATH} and {PREPROCESSOR_PATH}. "
-             "Please ensure the files are in the Models folder in the repository.")
-    st.stop()
-
-# Load the model and preprocessor
-try:
-    model = joblib.load(MODEL_PATH)
-    preprocessor = joblib.load(PREPROCESSOR_PATH)
-except Exception as e:
-    st.error(f"Error loading model or preprocessor: {e}")
-    st.stop()
 # Log the paths for debugging
 st.write(f"Attempting to load model from: {MODEL_PATH}")
 st.write(f"Attempting to load preprocessor from: {PREPROCESSOR_PATH}")

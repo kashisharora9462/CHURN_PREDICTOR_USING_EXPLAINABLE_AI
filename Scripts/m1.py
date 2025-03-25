@@ -25,9 +25,10 @@ warnings.filterwarnings('ignore')
 np.random.seed(42)
 
 # Paths to the pre-trained model, preprocessor, and precomputed outputs
-DATASET_PATH = "../Data/Raw/dataset.csv"
+
 MODEL_PATH = "../Models/random_forest_model.joblib"
 PREPROCESSOR_PATH = "../Models/preprocessor.joblib"
+DATASET_PATH = "../Data/Raw/dataset.csv"
 
 
 

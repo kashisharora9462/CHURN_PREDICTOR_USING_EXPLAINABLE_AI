@@ -72,10 +72,6 @@ Run the Streamlit application:
 ```sh
 streamlit run Scripts/m1.py
 ```
-Alternatively, you can run:
-```sh
-streamlit run Scripts/main.py
-```
 
 ### 2. Access the App
 - Open your browser and go to `http://localhost:8501` (or the URL provided by Streamlit).
@@ -93,23 +89,11 @@ streamlit run Scripts/main.py
 - **Batch Prediction**: Upload an Excel file with customer data to predict churn for multiple customers and download results as a CSV.
 - **Feedback**: Use the sidebar to provide feedback on the app.
 
-## Troubleshooting
-- **Model or Preprocessor Not Found**:
-  - Ensure `Models/preprocessor.joblib` and `Models/random_forest_model.joblib` exist. If missing, run `train_and_save_model.py`.
-- **Dataset Not Found**:
-  - Place `dataset.csv` in `Data/Raw/`.
-- **Missing Precomputed Outputs**:
-  - Run `train_and_save_model.py` to regenerate them.
-- **Path Issues**:
-  - Ensure scripts are executed from the correct directory, or update file paths accordingly.
-
-## Dependencies
-All required Python packages are listed in `requirements.txt`.
 
 ## Author
 - Kashish Ahuja
 - Contact: kashish.ahuja22b@iiitg.ac.in
 
 ## License
-This project is licensed under the MIT License (or specify your preferred license).
+This project is licensed under the MIT License 
 

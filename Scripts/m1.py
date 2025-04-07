@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Telecom Customer Churn Prediction with Streamlit (Pre-trained Random Forest)
+Telecom Customer Churn Prediction with Streamlit (Pre-trained XGBoost)
 ==================================================================================
-This script creates an enhanced Streamlit app for telecom customer churn prediction using a pre-trained Random Forest model.
+This script creates an enhanced Streamlit app for telecom customer churn prediction using a pre-trained XGBoost model.
 The app features a Home Page with navigation options, improved visual design, interactive elements, and additional functionality including batch prediction.
 """
 
@@ -24,9 +24,8 @@ from reportlab.pdfgen import canvas
 warnings.filterwarnings('ignore')
 np.random.seed(42)
 
-# Paths to the pre-trained model, preprocessor, and precomputed outputs
 
-MODEL_PATH = "../Models/random_forest_model.joblib"
+MODEL_PATH = "../Models/xgboost_model.joblib"
 PREPROCESSOR_PATH = "../Models/preprocessor.joblib"
 DATASET_PATH = "../Data/Raw/dataset.csv"
 
@@ -67,26 +66,22 @@ SHAP_SUMMARY_PATH = "../Plots/shap_summary_plot.png"
 SHAP_IMPORTANCE_PATH = "../Plots/shap_importance_plot.png"
 FEATURE_IMPORTANCE_PATH = "../Data/Output/feature_importance.csv"
 
-# Load the pre-trained model and preprocessor
+
+
 @st.cache_resource
 def load_model_and_preprocessor():
     if not os.path.exists(MODEL_PATH) or not os.path.exists(PREPROCESSOR_PATH):
-        st.error(f"❌ Model or preprocessor file not found at {MODEL_PATH} and {PREPROCESSOR_PATH}. Please run 'train_and_save_model.py' to train and save the model.")
+        st.error(f"❌ Model or preprocessor file not found at {MODEL_PATH} and {PREPROCESSOR_PATH}. Please run 'train_and_save_model11.py' to train and save the model.")
         return None, None
     try:
         model = joblib.load(MODEL_PATH)
         preprocessor = joblib.load(PREPROCESSOR_PATH)
-        # If model is a pipeline, extract the classifier; otherwise, assume it's standalone
-        if hasattr(model, 'named_steps') and 'model' in model.named_steps:
-            classifier = model.named_steps['model']
-        else:
-            classifier = model
+        classifier = model.named_steps['model']
         return classifier, preprocessor
     except Exception as e:
         st.error(f"❌ Error loading model or preprocessor: {str(e)}")
         return None, None
 
-# Cache precomputed data
 @st.cache_data
 def load_precomputed_data(file_path, file_type="csv"):
     try:
@@ -102,7 +97,6 @@ def load_precomputed_data(file_path, file_type="csv"):
         st.warning(f"⚠️ Error loading {file_path}: {str(e)}")
         return None
 
-# Function to generate a PDF report
 def generate_pdf_report(content_dict, title="Report"):
     buffer = BytesIO()
     c = canvas.Canvas(buffer, pagesize=letter)
@@ -127,14 +121,13 @@ def generate_pdf_report(content_dict, title="Report"):
             if y_position < 50:
                 c.showPage()
                 y_position = height - 50
-            c.drawString(50, y_position, line[:100])  # Truncate long lines
+            c.drawString(50, y_position, line[:100])
             y_position -= 15
     
     c.save()
     buffer.seek(0)
     return buffer
 
-# Function to display Step 1: Data Loading and Exploration
 def display_step_1():
     with st.expander("📊 Step 1: Data Loading and Exploration", expanded=False):
         try:
@@ -173,7 +166,6 @@ def display_step_1():
             st.markdown("#### ⚖️ Class distribution (Churn):")
             st.write(churn_distribution)
 
-# Function to display Step 2: Data Preprocessing
 def display_step_2():
     with st.expander("🛠️ Step 2: Data Preprocessing", expanded=False):
         preprocessing_log = load_precomputed_data(PREPROCESSING_LOG_PATH, file_type="lines")
@@ -181,7 +173,6 @@ def display_step_2():
             for log in preprocessing_log:
                 st.write(log)
 
-# Function to display Step 3: EDA
 def display_step_3():
     with st.expander("📈 Step 3: Exploratory Data Analysis", expanded=False):
         if os.path.exists(CHURN_DISTRIBUTION_PLOT_PATH):
@@ -204,21 +195,18 @@ def display_step_3():
             st.markdown("#### 🌡️ Correlation Matrix")
             st.image(CORRELATION_MATRIX_PLOT_PATH, caption="Correlation Matrix", use_container_width=True)
 
-# Function to display Step 4: Feature Engineering
 def display_step_4():
     with st.expander("🛠️ Step 4: Feature Engineering and Preparation", expanded=False):
         feature_engineering_log = load_precomputed_data(FEATURE_ENGINEERING_LOG_PATH, file_type="txt")
         if feature_engineering_log is not None:
             st.success(feature_engineering_log)
 
-# Function to display Step 5: Model Training
 def display_step_5():
-    with st.expander("🏋️ Step 5: Model Training (Random Forest)", expanded=False):
+    with st.expander("🏋️ Step 5: Model Training (XGBoost)", expanded=False):
         training_log = load_precomputed_data(TRAINING_LOG_PATH, file_type="txt")
         if training_log is not None:
             st.success(f"✅ {training_log}")
 
-# Function to display Step 6: Model Evaluation
 def display_step_6():
     with st.expander("📊 Step 6: Model Evaluation", expanded=False):
         metrics_log = load_precomputed_data(EVALUATION_METRICS_PATH, file_type="lines")
@@ -234,23 +222,21 @@ def display_step_6():
             st.markdown("#### 📈 ROC Curve")
             st.image(ROC_CURVE_PLOT_PATH, caption="ROC Curve", use_container_width=True)
 
-# Function to display Step 7: SHAP Explainability
 def display_step_7():
     with st.expander("🔍 Step 7: Model Explainability with SHAP", expanded=False):
         if os.path.exists(SHAP_SUMMARY_PATH):
             st.markdown("#### 📊 SHAP Summary Plot")
-            st.image(SHAP_SUMMARY_PATH, caption="SHAP Summary Plot for Random Forest", use_container_width=True)
+            st.image(SHAP_SUMMARY_PATH, caption="SHAP Summary Plot for XGBoost", use_container_width=True)
         
         if os.path.exists(SHAP_IMPORTANCE_PATH):
             st.markdown("#### 📈 SHAP Feature Importance")
-            st.image(SHAP_IMPORTANCE_PATH, caption="SHAP Feature Importance for Random Forest", use_container_width=True)
+            st.image(SHAP_IMPORTANCE_PATH, caption="SHAP Feature Importance for XGBoost", use_container_width=True)
         
         feature_importance = load_precomputed_data(FEATURE_IMPORTANCE_PATH)
         if feature_importance is not None:
             st.markdown("#### 📋 Feature Importance")
             st.write(feature_importance.head(10))
 
-# Function to display Step 8: Business Recommendations
 def display_step_8():
     with st.expander("💡 Step 8: Business Recommendations", expanded=False):
         st.markdown("#### 📋 Top features influencing customer churn:")
@@ -274,9 +260,7 @@ def display_step_8():
         for rec in recommendations:
             st.write(rec)
 
-# Helper function to preprocess data
 def preprocess_data(df, required_features):
-    """Preprocess a DataFrame consistently with training data, ensuring only required features are processed."""
     df_processed = df.copy()
     if 'TotalCharges' in df_processed.columns and df_processed['TotalCharges'].dtype == 'object':
         df_processed['TotalCharges'] = pd.to_numeric(df_processed['TotalCharges'], errors='coerce')
@@ -288,48 +272,38 @@ def preprocess_data(df, required_features):
         df_processed[col].fillna(df_processed[col].mode()[0], inplace=True)
     if 'SeniorCitizen' in df_processed.columns:
         df_processed['SeniorCitizen'] = df_processed['SeniorCitizen'].map({0: 'No', 1: 'Yes', 'No': 'No', 'Yes': 'Yes'})
+    if 'customerID' in df_processed.columns:
+        df_processed.drop('customerID', axis=1, inplace=True)
+    # Add engineered features
+    df_processed['AvgMonthlyCost'] = df_processed['TotalCharges'] / (df_processed['tenure'] + 1)
+    df_processed['HighRisk'] = ((df_processed['SeniorCitizen'] == 'Yes') & (df_processed['Contract'] == 'Month-to-month')).astype(int)
     object_cols = df_processed.select_dtypes(include=['object']).columns.intersection(required_features)
     df_processed[object_cols] = df_processed[object_cols].astype(str)
-    # Ensure only required features are returned
     missing_cols = set(required_features) - set(df_processed.columns)
     for col in missing_cols:
         df_processed[col] = 0 if col in numeric_cols else df_processed[categorical_cols[0]].mode()[0]
     return df_processed[required_features]
 
-# Function to predict churn for user input and show SHAP values
 def predict_churn_for_user_input(model, preprocessor):
     st.markdown("## 🔮 Predict Churn for a New Customer")
     st.markdown("Choose how you'd like to predict churn: enter details manually for one customer or upload a file for multiple customers.")
 
-    # Load dataset to determine required columns
     try:
         df = pd.read_csv(DATASET_PATH)
     except Exception as e:
         st.error(f"❌ Error loading dataset from {DATASET_PATH}: {str(e)}")
         return
 
-    df = preprocess_data(df, required_features=['gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure',
-                                                'PhoneService', 'MultipleLines', 'InternetService', 'OnlineSecurity',
-                                                'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV',
-                                                'StreamingMovies', 'Contract', 'PaperlessBilling', 'PaymentMethod',
-                                                'MonthlyCharges', 'TotalCharges'])
-    if 'customerID' in df.columns:
-        df.drop('customerID', axis=1, inplace=True)
-    if 'Churn' in df.columns and df['Churn'].dtype == 'object':
-        df['Churn'] = df['Churn'].map({'No': 0, 'Yes': 1})
-    
-    columns_to_drop = [col for col in ['customerID', 'Churn'] if col in df.columns]
-    # Define required features (the 19 raw features expected by the preprocessor)
+    # Updated required features with new engineered ones
     required_features = [
         'gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure',
         'PhoneService', 'MultipleLines', 'InternetService', 'OnlineSecurity',
         'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV',
         'StreamingMovies', 'Contract', 'PaperlessBilling', 'PaymentMethod',
-        'MonthlyCharges', 'TotalCharges'
+        'MonthlyCharges', 'TotalCharges', 'AvgMonthlyCost', 'HighRisk'
     ]
     st.info(f"📋 Dataset expects {len(required_features)} input features: {required_features}")
 
-    # Define categorical options
     categorical_options = {
         'gender': ['Male', 'Female'],
         'SeniorCitizen': ['No', 'Yes'],
@@ -349,59 +323,48 @@ def predict_churn_for_user_input(model, preprocessor):
         'PaymentMethod': ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
     }
 
-    # Radio button to select prediction type
     prediction_type = st.radio("**Select Prediction Type**", ["Manual Input", "Batch Prediction"], help="Choose 'Manual Input' to enter details for one customer, or 'Batch Prediction' to upload a file for multiple customers.")
 
     if prediction_type == "Manual Input":
         st.markdown("### 📝 Manual Input: Customer Details")
         with st.form(key='user_input_form'):
-            # Customer Profile
             st.markdown("#### Customer Profile")
             col1, col2 = st.columns(2)
             with col1:
-                gender = st.selectbox("Gender", options=categorical_options['gender'], help="Select the customer's gender.")
-                senior_citizen = st.selectbox("SeniorCitizen", options=categorical_options['SeniorCitizen'], help="Is the customer a senior citizen?")
-                partner = st.selectbox("Partner", options=categorical_options['Partner'], help="Does the customer have a partner?")
+                gender = st.selectbox("Gender", options=categorical_options['gender'])
+                senior_citizen = st.selectbox("SeniorCitizen", options=categorical_options['SeniorCitizen'])
+                partner = st.selectbox("Partner", options=categorical_options['Partner'])
             with col2:
-                dependents = st.selectbox("Dependents", options=categorical_options['Dependents'], help="Does the customer have dependents?")
-                tenure = st.number_input("Tenure (months)", min_value=0, value=0, help="Number of months the customer has been with the company.")
+                dependents = st.selectbox("Dependents", options=categorical_options['Dependents'])
+                tenure = st.number_input("Tenure (months)", min_value=0, value=0)
 
-            # Services
             st.markdown("#### Services")
             col3, col4 = st.columns(2)
             with col3:
-                phone_service = st.selectbox("Phone Service", options=categorical_options['PhoneService'], help="Does the customer have phone service?")
-                multiple_lines = st.selectbox("Multiple Lines", options=categorical_options['MultipleLines'], help="Does the customer have multiple lines?")
-                internet_service = st.selectbox("Internet Service", options=categorical_options['InternetService'], help="Type of internet service.")
-                online_security = st.selectbox("Online Security", options=categorical_options['OnlineSecurity'], help="Does the customer have online security?")
-                online_backup = st.selectbox("Online Backup", options=categorical_options['OnlineBackup'], help="Does the customer have online backup?")
+                phone_service = st.selectbox("Phone Service", options=categorical_options['PhoneService'])
+                multiple_lines = st.selectbox("Multiple Lines", options=categorical_options['MultipleLines'])
+                internet_service = st.selectbox("Internet Service", options=categorical_options['InternetService'])
+                online_security = st.selectbox("Online Security", options=categorical_options['OnlineSecurity'])
+                online_backup = st.selectbox("Online Backup", options=categorical_options['OnlineBackup'])
             with col4:
-                device_protection = st.selectbox("Device Protection", options=categorical_options['DeviceProtection'], help="Does the customer have device protection?")
-                tech_support = st.selectbox("Tech Support", options=categorical_options['TechSupport'], help="Does the customer have tech support?")
-                streaming_tv = st.selectbox("Streaming TV", options=categorical_options['StreamingTV'], help="Does the customer have streaming TV?")
-                streaming_movies = st.selectbox("Streaming Movies", options=categorical_options['StreamingMovies'], help="Does the customer have streaming movies?")
+                device_protection = st.selectbox("Device Protection", options=categorical_options['DeviceProtection'])
+                tech_support = st.selectbox("Tech Support", options=categorical_options['TechSupport'])
+                streaming_tv = st.selectbox("Streaming TV", options=categorical_options['StreamingTV'])
+                streaming_movies = st.selectbox("Streaming Movies", options=categorical_options['StreamingMovies'])
 
-            # Billing Information
             st.markdown("#### Billing Information")
             col5, col6 = st.columns(2)
             with col5:
-                contract = st.selectbox("Contract", options=categorical_options['Contract'], help="Type of contract.")
-                paperless_billing = st.selectbox("Paperless Billing", options=categorical_options['PaperlessBilling'], help="Does the customer use paperless billing?")
-                payment_method = st.selectbox("Payment Method", options=categorical_options['PaymentMethod'], help="Customer's payment method.")
+                contract = st.selectbox("Contract", options=categorical_options['Contract'])
+                paperless_billing = st.selectbox("Paperless Billing", options=categorical_options['PaperlessBilling'])
+                payment_method = st.selectbox("Payment Method", options=categorical_options['PaymentMethod'])
             with col6:
-                monthly_charges = st.number_input("Monthly Charges ($)", min_value=0.0, step=0.01, help="Monthly charges.")
-                total_charges = st.number_input("Total Charges ($)", min_value=0.0, step=0.01, help="Total charges to date.")
+                monthly_charges = st.number_input("Monthly Charges ($)", min_value=0.0, step=0.01)
+                total_charges = st.number_input("Total Charges ($)", min_value=0.0, step=0.01)
 
             submit_button = st.form_submit_button(label='🔍 Predict Churn')
 
         if submit_button:
-            # Validate numeric inputs
-            for col, value in [('tenure', tenure), ('MonthlyCharges', monthly_charges), ('TotalCharges', total_charges)]:
-                if value < 0:
-                    st.error(f"❌ {col} cannot be negative. Please enter a value >= 0.")
-                    return
-
-            # Create user input dictionary with 19 features
             user_input = {
                 'gender': gender,
                 'SeniorCitizen': senior_citizen,
@@ -424,8 +387,6 @@ def predict_churn_for_user_input(model, preprocessor):
                 'TotalCharges': total_charges
             }
             user_df = pd.DataFrame([user_input])
-
-            # Preprocess and predict
             try:
                 user_df = preprocess_data(user_df, required_features)
                 preprocessed_user_input = preprocessor.transform(user_df)
@@ -442,28 +403,16 @@ def predict_churn_for_user_input(model, preprocessor):
                 else:
                     st.success(f"🎉 Customer is **not likely to churn** with a probability of {1 - prediction_proba[0]:.2%} (churn probability: {prediction_proba[0]:.2%}).")
 
-                # SHAP explanation
                 st.markdown("#### 🔍 SHAP Explanation: Feature Contributions to the Prediction")
                 with st.spinner("Computing SHAP values... ⏳"):
                     explainer = shap.TreeExplainer(model)
                     shap_values = explainer.shap_values(preprocessed_user_input)
-                    # Handle different shap_values formats
-                    if isinstance(shap_values, list):
-                        shap_values = shap_values[1]  # Positive class (churn=1)
-                    elif len(shap_values.shape) == 3:
-                        shap_values = shap_values[:, :, 1]  # [samples, features, classes] -> [samples, features]
-                    
-                    # Ensure shap_values is 1D for a single sample
-                    if shap_values.shape[0] == 1:
-                        shap_values = shap_values[0]  # Flatten from (1, 46) to (46,)
-
-                    # Debugging shapes
-                    st.write("DEBUG: preprocessed_user_input shape:", preprocessed_user_input.shape)
-                    st.write("DEBUG: shap_values shape:", shap_values.shape)
+                    if len(shap_values.shape) == 1:
+                        shap_values = shap_values.reshape(1, -1)
 
                     feature_names = preprocessor.get_feature_names_out()
                     feature_names = [name.split('__')[-1] for name in feature_names]
-                    shap_df = pd.DataFrame({'Feature': feature_names, 'SHAP Value': shap_values})
+                    shap_df = pd.DataFrame({'Feature': feature_names, 'SHAP Value': shap_values[0]})
                     shap_df['Absolute SHAP Value'] = shap_df['SHAP Value'].abs()
                     shap_df = shap_df.sort_values(by='Absolute SHAP Value', ascending=False)
 
@@ -479,7 +428,7 @@ def predict_churn_for_user_input(model, preprocessor):
                     st.markdown("#### 📊 SHAP Force Plot")
                     shap.initjs()
                     plt.figure()
-                    shap.force_plot(explainer.expected_value[1], shap_values, preprocessed_user_input[0],
+                    shap.force_plot(explainer.expected_value, shap_values[0], preprocessed_user_input[0],
                                    feature_names=feature_names, matplotlib=True, show=False)
                     st.pyplot(plt.gcf())
 
@@ -495,13 +444,13 @@ def predict_churn_for_user_input(model, preprocessor):
 
     elif prediction_type == "Batch Prediction":
         st.markdown("### 📂 Batch Prediction: Upload Customer Data File")
-        st.markdown(f"**Instructions**: Upload an Excel file with these columns: {', '.join(required_features)}. Ensure data types match (e.g., 'tenure' as numeric, 'gender' as 'Male'/'Female', etc.).")
+        st.markdown(f"**Instructions**: Upload an Excel file with these columns: {', '.join(required_features[:-2])}. The app will compute 'AvgMonthlyCost' and 'HighRisk'.")
         uploaded_file = st.file_uploader("Upload an Excel file with customer data", type=["xlsx", "xls"])
         if uploaded_file is not None:
             try:
                 df_uploaded = pd.read_excel(uploaded_file)
                 st.success(f"✅ Successfully loaded {df_uploaded.shape[0]} customer records.")
-                required_columns = set(required_features)
+                required_columns = set(required_features[:-2])  # Exclude engineered features
                 uploaded_columns = set(df_uploaded.columns)
                 missing_columns = required_columns - uploaded_columns
                 extra_columns = uploaded_columns - required_columns
@@ -513,10 +462,6 @@ def predict_churn_for_user_input(model, preprocessor):
                     df_uploaded = df_uploaded.drop(columns=list(extra_columns))
 
                 df_uploaded = preprocess_data(df_uploaded, required_features)
-                
-                st.write("DEBUG: Shape of df_uploaded before transform:", df_uploaded.shape)
-                st.write("DEBUG: Columns of df_uploaded before transform:", df_uploaded.columns.tolist())
-
                 preprocessed_data = preprocessor.transform(df_uploaded)
                 if hasattr(preprocessed_data, 'toarray'):
                     preprocessed_data = preprocessed_data.toarray()
@@ -528,10 +473,6 @@ def predict_churn_for_user_input(model, preprocessor):
                 with st.spinner("Computing SHAP values... ⏳"):
                     explainer = shap.TreeExplainer(model)
                     shap_values = explainer.shap_values(preprocessed_data)
-                    if isinstance(shap_values, list):
-                        shap_values = shap_values[1]
-                    elif len(shap_values.shape) == 3:
-                        shap_values = shap_values[:, :, 1]
 
                 feature_names = preprocessor.get_feature_names_out()
                 feature_names = [name.split('__')[-1] for name in feature_names]
@@ -559,7 +500,7 @@ def predict_churn_for_user_input(model, preprocessor):
 
     if st.button("🏠 Back to Home"):
         st.session_state.page = "home"
-# Function to display Model Insights
+
 def display_model_insights():
     st.markdown("## 🔍 Model Insights")
     st.markdown("Explore the precomputed insights of the churn prediction model (Steps 1-8).")
@@ -625,10 +566,9 @@ def display_model_insights():
     if st.button("🏠 Back to Home"):
         st.session_state.page = "home"
 
-# Function to display the Home Page
 def display_home_page():
     st.markdown('<div class="main-title">📡 Telecom Customer Churn Prediction</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subheader">Welcome to the Telecom Churn Prediction App! 🚀<br>This app uses a pre-trained Random Forest model to predict customer churn and provides insights into the model\'s workings. Choose an option below to get started.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subheader">Welcome to the Telecom Churn Prediction App! 🚀<br>This app uses a pre-trained XGBoost model to predict customer churn and provides insights into the model\'s workings. Choose an option below to get started.</div>', unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     
@@ -652,7 +592,6 @@ def display_home_page():
         if st.button("Go to Predict Churn", key="predict_churn_btn"):
             st.session_state.page = "predict_churn"
 
-# Main Streamlit app
 def main():
     st.set_page_config(page_title="Telecom Churn Prediction", page_icon="📡", layout="wide")
     

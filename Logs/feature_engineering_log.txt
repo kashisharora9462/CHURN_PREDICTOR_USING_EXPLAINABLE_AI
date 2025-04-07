@@ -1,1 +1,1 @@
-Features prepared successfully with 22 raw inputs!
+Added features: AvgMonthlyCost, HighRisk, TenureBin, ChargePerTenure

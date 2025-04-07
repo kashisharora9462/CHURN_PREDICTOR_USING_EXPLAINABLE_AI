@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script to pre-train an XGBoost model for telecom customer churn prediction, targeting 90%+ accuracy.
+Script to pre-train an XGBoost model for telecom customer churn prediction and predict churn probability with SHAP analysis.
 """
 
 import pandas as pd
@@ -26,7 +26,7 @@ warnings.filterwarnings('ignore')
 np.random.seed(42)
 pd.set_option('display.max_columns', None)
 
-# Path definitions (unchanged)
+# Path definitions
 DATASET_PATH = "../Data/Raw/dataset.csv"
 MODEL_PATH = "xgboost_model.joblib"
 PREPROCESSOR_PATH = "preprocessor.joblib"
@@ -50,8 +50,9 @@ ROC_CURVE_PLOT_PATH = "roc_curve_plot.png"
 SHAP_SUMMARY_PATH = "shap_summary_plot.png"
 SHAP_IMPORTANCE_PATH = "shap_importance_plot.png"
 FEATURE_IMPORTANCE_PATH = "feature_importance.csv"
+SHAP_FORCE_PLOT_PATH = "shap_force_plot.html"  # Changed to .html for interactive plot
 
-# Unchanged functions: load_and_explore_data, preprocess_data, perform_eda, feature_engineering, prepare_features
+# Existing functions (unchanged except where noted)
 def load_and_explore_data(df):
     df.head().to_csv(DATA_HEAD_PATH, index=False)
     dtypes_df = pd.DataFrame(df.dtypes.astype(str), columns=['Data Type'])
@@ -75,7 +76,7 @@ def preprocess_data(df):
     preprocessing_log.append(f"Missing values before imputation: {missing_before}")
     numeric_cols = df_processed.select_dtypes(include=['number']).columns
     for col in numeric_cols:
-        lower, upper = df_processed[col].quantile([0.01, 0.99])
+        lower, upper = df_processed[col].quantile([0.01, 0.99]) if not df_processed[col].isna().all() else (0, 0)
         df_processed[col] = df_processed[col].clip(lower, upper)
         df_processed[col].fillna(df_processed[col].median(), inplace=True)
     categorical_cols = df_processed.select_dtypes(include=['object']).columns
@@ -144,9 +145,8 @@ def feature_engineering(df):
     return df_fe
 
 def prepare_features(df):
-    df_fe = feature_engineering(df)
-    X = df_fe.drop('Churn', axis=1)
-    y = df_fe['Churn']
+    X = df.drop('Churn', axis=1)
+    y = df['Churn']
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
     numerical_cols = X.select_dtypes(include=['number']).columns.tolist()
@@ -165,31 +165,24 @@ def prepare_features(df):
         ])
     return X_train, X_test, y_train, y_test, preprocessor
 
-# Updated train_model to use only XGBoost with enhanced tuning
 def train_model(X_train, y_train, preprocessor):
-    # Further split training data into train and validation for early stopping during tuning
     X_train_sub, X_val, y_train_sub, y_val = train_test_split(
         X_train, y_train, test_size=0.2, random_state=42, stratify=y_train
     )
-    
-    # Preprocess the sub-training and validation sets
     X_train_sub_preprocessed = preprocessor.fit_transform(X_train_sub)
     X_val_preprocessed = preprocessor.transform(X_val)
     
-    # Calculate class weight for imbalance
     neg, pos = np.bincount(y_train)
     scale_pos_weight = neg / pos
     
-    # Define XGBoost with early stopping for tuning
     xgb = XGBClassifier(
         random_state=42,
         use_label_encoder=False,
         eval_metric='logloss',
         scale_pos_weight=scale_pos_weight,
-        early_stopping_rounds=10  # Used only during tuning
+        early_stopping_rounds=10
     )
     
-    # Expanded parameter search space
     param_dist = {
         'max_depth': [3, 4, 5, 6, 7, 8, 9, 10],
         'learning_rate': [0.001, 0.01, 0.05, 0.1, 0.2, 0.3],
@@ -202,10 +195,7 @@ def train_model(X_train, y_train, preprocessor):
         'reg_alpha': [0, 0.1, 1, 10]
     }
     
-    # Use StratifiedKFold for cross-validation
     cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-    
-    # Increase n_iter for better exploration
     random_search = RandomizedSearchCV(
         xgb,
         param_distributions=param_dist,
@@ -217,7 +207,6 @@ def train_model(X_train, y_train, preprocessor):
         verbose=1
     )
     
-    # Fit with early stopping using validation set during tuning
     random_search.fit(
         X_train_sub_preprocessed,
         y_train_sub,
@@ -225,26 +214,24 @@ def train_model(X_train, y_train, preprocessor):
         verbose=False
     )
     
-    # Create a new XGBClassifier with the best parameters, without early stopping
     best_params = random_search.best_params_
     best_xgb = XGBClassifier(
         **best_params,
         random_state=42,
         use_label_encoder=False,
         eval_metric='logloss',
-        scale_pos_weight=scale_pos_weight  # No early_stopping_rounds here
+        scale_pos_weight=scale_pos_weight
     )
     
-    # Create pipeline with preprocessor and best XGBoost model
     pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', best_xgb)])
-    pipeline.fit(X_train, y_train)  # Fit on full training data, no eval_set needed
+    pipeline.fit(X_train, y_train)
     
     with open(TRAINING_LOG_PATH, 'w') as f:
         f.write(f"Best parameters: {random_search.best_params_}\n")
         f.write(f"Best CV Accuracy: {random_search.best_score_:.4f}\n")
     
     return pipeline
-# Unchanged evaluate_model and explain_model
+
 def evaluate_model(model, X_test, y_test):
     try:
         y_pred_proba = model.predict_proba(X_test)[:, 1]
@@ -306,6 +293,8 @@ def explain_model(model, X_test, preprocessor):
     feature_names = preprocessor.get_feature_names_out()
     feature_names = [name.split('__')[-1] for name in feature_names]
     
+    assert preprocessed_X_test.shape[1] == len(feature_names), "Feature count mismatch between data and names"
+    
     plt.figure(figsize=(12, 8))
     shap.summary_plot(shap_values, preprocessed_X_test, feature_names=feature_names, show=False)
     plt.title('SHAP Summary Plot for XGBoost')
@@ -324,30 +313,157 @@ def explain_model(model, X_test, preprocessor):
     }).sort_values('Importance', ascending=False)
     feature_importance.to_csv(FEATURE_IMPORTANCE_PATH, index=False)
 
-# [Keep all other imports, path definitions, and functions as they were]
-# Replace only the train_model function with the updated version above
-
 def precompute_steps():
     df = pd.read_csv(DATASET_PATH)
     print(f"Loaded dataset with {df.shape[0]} rows and {df.shape[1]} columns.")
+    
     load_and_explore_data(df)
     print("Step 1: Data exploration outputs saved.")
+    
     df_processed = preprocess_data(df)
     print("Step 2: Preprocessing outputs saved.")
+    
     perform_eda(df_processed)
     print("Step 3: EDA plots saved.")
-    X_train, X_test, y_train, y_test, preprocessor = prepare_features(df_processed)
+    
+    df_fe = feature_engineering(df_processed)
     print("Step 4: Feature engineering log saved.")
+    
+    X_train, X_test, y_train, y_test, preprocessor = prepare_features(df_fe)
+    print("Step 5: Features prepared.")
+    
     model = train_model(X_train, y_train, preprocessor)
-    print("Step 5: Training log saved.")
+    print("Step 6: Training log saved.")
+    
     evaluate_model(model, X_test, y_test)
-    print("Step 6: Evaluation outputs saved.")
+    print("Step 7: Evaluation outputs saved.")
+    
     explain_model(model, X_test, preprocessor)
-    print("Step 7: SHAP outputs saved.")
+    print("Step 8: SHAP outputs saved.")
+    
     joblib.dump(model, MODEL_PATH)
     joblib.dump(preprocessor, PREPROCESSOR_PATH)
     print(f"Model saved to {MODEL_PATH}")
     print(f"Preprocessor saved to {PREPROCESSOR_PATH}")
 
+# Enhanced prediction function with SHAP analysis
+def predict_churn_with_shap(new_data, model_path=MODEL_PATH, preprocessor_path=PREPROCESSOR_PATH, output_force_plot=SHAP_FORCE_PLOT_PATH):
+    """
+    Predict churn probability for new customer data and analyze feature contributions with SHAP.
+    
+    Args:
+        new_data (dict or pd.DataFrame): Input data for prediction.
+        model_path (str): Path to the saved model.
+        preprocessor_path (str): Path to the saved preprocessor.
+        output_force_plot (str): Path to save the SHAP force plot (HTML).
+    
+    Returns:
+        tuple: (churn_probability, shap_values, feature_names)
+    """
+    try:
+        # Load the trained model and preprocessor
+        model = joblib.load(model_path)
+        preprocessor = joblib.load(preprocessor_path)
+        
+        # Convert dictionary to DataFrame if necessary
+        if isinstance(new_data, dict):
+            new_df = pd.DataFrame([new_data])
+        else:
+            new_df = new_data.copy()
+        
+        # Apply feature engineering (same as training)
+        new_df_fe = feature_engineering(new_df)
+        
+        # Ensure all expected columns are present (excluding 'Churn')
+        expected_cols = ['gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure', 'PhoneService', 
+                         'MultipleLines', 'InternetService', 'OnlineSecurity', 'OnlineBackup', 
+                         'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies', 
+                         'Contract', 'PaperlessBilling', 'PaymentMethod', 'MonthlyCharges', 
+                         'TotalCharges', 'AvgMonthlyCost', 'HighRisk', 'TenureBin', 'ChargePerTenure']
+        for col in expected_cols:
+            if col not in new_df_fe.columns:
+                new_df_fe[col] = 0  # Default value, adjust as needed
+        
+        # Drop 'Churn' if present (not needed for prediction)
+        if 'Churn' in new_df_fe.columns:
+            new_df_fe = new_df_fe.drop('Churn', axis=1)
+        
+        # Predict probability
+        churn_prob = model.predict_proba(new_df_fe)[:, 1][0]  # Probability of churn (class 1)
+        
+        # Preprocess the data for SHAP
+        preprocessed_data = preprocessor.transform(new_df_fe)
+        if hasattr(preprocessed_data, 'toarray'):
+            preprocessed_data = preprocessed_data.toarray()
+        
+        # Compute SHAP values
+        explainer = shap.TreeExplainer(model.named_steps['model'])
+        shap_values = explainer.shap_values(preprocessed_data)
+        
+        # Get feature names
+        feature_names = preprocessor.get_feature_names_out()
+        feature_names = [name.split('__')[-1] for name in feature_names]
+        
+        # Generate SHAP force plot (interactive HTML)
+        shap.initjs()  # Initialize JavaScript for interactive plots
+        force_plot = shap.force_plot(
+            explainer.expected_value, 
+            shap_values[0], 
+            preprocessed_data[0], 
+            feature_names=feature_names,
+            show=False
+        )
+        shap.save_html(output_force_plot, force_plot)
+        
+        # Print results
+        print(f"Churn Probability: {churn_prob:.4f} ({churn_prob*100:.2f}%)")
+        print(f"SHAP force plot saved to: {output_force_plot}")
+        
+        return churn_prob, shap_values, feature_names
+    
+    except Exception as e:
+        print(f"Error during prediction or SHAP analysis: {str(e)}")
+        raise
+
+# Example manual prediction with SHAP
+def manual_prediction_with_shap_example():
+    # Your manual input
+    new_customer = {
+        'gender': 'Male',
+        'SeniorCitizen': 'No',
+        'Partner': 'Yes',
+        'Dependents': 'Yes',
+        'tenure': 0,
+        'PhoneService': 'Yes',
+        'MultipleLines': 'Yes',
+        'InternetService': 'DSL',
+        'OnlineSecurity': 'Yes',
+        'OnlineBackup': 'Yes',
+        'DeviceProtection': 'Yes',
+        'TechSupport': 'Yes',
+        'StreamingTV': 'Yes',
+        'StreamingMovies': 'Yes',
+        'Contract': 'Month-to-month',
+        'PaperlessBilling': 'Yes',
+        'PaymentMethod': 'Electronic check',
+        'MonthlyCharges': 0.00,
+        'TotalCharges': 0.00
+    }
+    
+    # Predict churn probability and get SHAP analysis
+    churn_prob, shap_values, feature_names = predict_churn_with_shap(new_customer)
+    
+    # Optional: Print top contributing features
+    shap_contributions = pd.DataFrame({
+        'Feature': feature_names,
+        'SHAP Value': shap_values[0]
+    }).sort_values(by='SHAP Value', key=abs, ascending=False)
+    print("\nTop 5 Feature Contributions to Prediction:")
+    print(shap_contributions.head())
+
 if __name__ == "__main__":
+    # Uncomment to train the model
     precompute_steps()
+    
+    # Run manual prediction with SHAP example
+    manual_prediction_with_shap_example()

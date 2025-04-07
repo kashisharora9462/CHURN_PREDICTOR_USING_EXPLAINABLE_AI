@@ -24,13 +24,9 @@ from reportlab.pdfgen import canvas
 warnings.filterwarnings('ignore')
 np.random.seed(42)
 
-
 MODEL_PATH = "../Models/xgboost_model.joblib"
 PREPROCESSOR_PATH = "../Models/preprocessor.joblib"
 DATASET_PATH = "../Data/Raw/dataset.csv"
-
-
-
 
 # Step 1: Data Loading and Exploration
 DATA_HEAD_PATH = "../Data/Output/data_head.csv"
@@ -66,8 +62,6 @@ SHAP_SUMMARY_PATH = "../Plots/shap_summary_plot.png"
 SHAP_IMPORTANCE_PATH = "../Plots/shap_importance_plot.png"
 FEATURE_IMPORTANCE_PATH = "../Data/Output/feature_importance.csv"
 
-
-
 @st.cache_resource
 def load_model_and_preprocessor():
     if not os.path.exists(MODEL_PATH) or not os.path.exists(PREPROCESSOR_PATH):
@@ -76,7 +70,7 @@ def load_model_and_preprocessor():
     try:
         model = joblib.load(MODEL_PATH)
         preprocessor = joblib.load(PREPROCESSOR_PATH)
-        classifier = model.named_steps['model']
+        classifier = model.named_steps['model']  # Assuming model is a Pipeline
         return classifier, preprocessor
     except Exception as e:
         st.error(f"❌ Error loading model or preprocessor: {str(e)}")
@@ -274,9 +268,13 @@ def preprocess_data(df, required_features):
         df_processed['SeniorCitizen'] = df_processed['SeniorCitizen'].map({0: 'No', 1: 'Yes', 'No': 'No', 'Yes': 'Yes'})
     if 'customerID' in df_processed.columns:
         df_processed.drop('customerID', axis=1, inplace=True)
-    # Add engineered features
+    # Add engineered features (match training script)
     df_processed['AvgMonthlyCost'] = df_processed['TotalCharges'] / (df_processed['tenure'] + 1)
     df_processed['HighRisk'] = ((df_processed['SeniorCitizen'] == 'Yes') & (df_processed['Contract'] == 'Month-to-month')).astype(int)
+    df_processed['ChargePerTenure'] = df_processed['MonthlyCharges'] * df_processed['tenure']
+    # Add TenureBin with the same bin edges as training
+    df_processed['TenureBin'] = pd.cut(df_processed['tenure'], bins=[0, 12, 24, 36, 48, 60, 100], 
+                                     labels=['0-1yr', '1-2yr', '2-3yr', '3-4yr', '4-5yr', '5+yr'])
     object_cols = df_processed.select_dtypes(include=['object']).columns.intersection(required_features)
     df_processed[object_cols] = df_processed[object_cols].astype(str)
     missing_cols = set(required_features) - set(df_processed.columns)
@@ -294,13 +292,13 @@ def predict_churn_for_user_input(model, preprocessor):
         st.error(f"❌ Error loading dataset from {DATASET_PATH}: {str(e)}")
         return
 
-    # Updated required features with new engineered ones
+    # Updated required features with all engineered ones
     required_features = [
         'gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure',
         'PhoneService', 'MultipleLines', 'InternetService', 'OnlineSecurity',
         'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV',
         'StreamingMovies', 'Contract', 'PaperlessBilling', 'PaymentMethod',
-        'MonthlyCharges', 'TotalCharges', 'AvgMonthlyCost', 'HighRisk'
+        'MonthlyCharges', 'TotalCharges', 'AvgMonthlyCost', 'HighRisk', 'ChargePerTenure', 'TenureBin'
     ]
     st.info(f"📋 Dataset expects {len(required_features)} input features: {required_features}")
 
@@ -320,7 +318,8 @@ def predict_churn_for_user_input(model, preprocessor):
         'StreamingMovies': ['Yes', 'No', 'No internet service'],
         'Contract': ['Month-to-month', 'One year', 'Two year'],
         'PaperlessBilling': ['Yes', 'No'],
-        'PaymentMethod': ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)']
+        'PaymentMethod': ['Electronic check', 'Mailed check', 'Bank transfer (automatic)', 'Credit card (automatic)'],
+        'TenureBin': ['0-1yr', '1-2yr', '2-3yr', '3-4yr', '4-5yr', '5+yr']  # Optional, for reference
     }
 
     prediction_type = st.radio("**Select Prediction Type**", ["Manual Input", "Batch Prediction"], help="Choose 'Manual Input' to enter details for one customer, or 'Batch Prediction' to upload a file for multiple customers.")
@@ -444,13 +443,13 @@ def predict_churn_for_user_input(model, preprocessor):
 
     elif prediction_type == "Batch Prediction":
         st.markdown("### 📂 Batch Prediction: Upload Customer Data File")
-        st.markdown(f"**Instructions**: Upload an Excel file with these columns: {', '.join(required_features[:-2])}. The app will compute 'AvgMonthlyCost' and 'HighRisk'.")
+        st.markdown(f"**Instructions**: Upload an Excel file with these columns: {', '.join(required_features[:-3])}. The app will compute 'AvgMonthlyCost', 'HighRisk', 'ChargePerTenure', and 'TenureBin'.")
         uploaded_file = st.file_uploader("Upload an Excel file with customer data", type=["xlsx", "xls"])
         if uploaded_file is not None:
             try:
                 df_uploaded = pd.read_excel(uploaded_file)
                 st.success(f"✅ Successfully loaded {df_uploaded.shape[0]} customer records.")
-                required_columns = set(required_features[:-2])  # Exclude engineered features
+                required_columns = set(required_features[:-3])  # Exclude engineered features
                 uploaded_columns = set(df_uploaded.columns)
                 missing_columns = required_columns - uploaded_columns
                 extra_columns = uploaded_columns - required_columns

@@ -1,0 +1,17 @@
+[server]
+headless = true
+port = 8501
+enableCORS = false
+
+[theme]
+base="dark"
+
+[runner]
+magicEnabled = true
+
+[client]
+initialSidebarState = "expanded"
+
+[general]
+# This makes Streamlit Cloud run from the main folder
+scriptPath = "main/m1.py"

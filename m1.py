@@ -417,47 +417,51 @@ def predict_churn_for_user_input(model, preprocessor):
 
                     # Robust feature name extraction
                     feature_names = required_features  # Default fallback
-                    try:
-                        if hasattr(preprocessor, 'get_feature_names_out'):
-                            feature_names = preprocessor.get_feature_names_out()
+                try:
+                    if hasattr(preprocessor, 'get_feature_names_out'):
+                        feature_names = preprocessor.get_feature_names_out()
+                        st.write("Debug: Raw feature names from preprocessor:", feature_names)
+                        feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
+                        st.write("Debug: Cleaned feature names from preprocessor:", feature_names)
+                    elif hasattr(preprocessor, 'named_transformers_') and 'cat' in preprocessor.named_transformers_:
+                        encoder = preprocessor.named_transformers_['cat']
+                        if hasattr(encoder, 'get_feature_names_out'):
+                            feature_names = encoder.get_feature_names_out(categorical_features)
+                            st.write("Debug: Raw feature names from encoder:", feature_names)
                             feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
-                            st.write("Debug: Cleaned feature names from preprocessor:", feature_names)
-                        elif hasattr(preprocessor, 'named_transformers_') and 'cat' in preprocessor.named_transformers_:
-                            encoder = preprocessor.named_transformers_['cat']
-                            if hasattr(encoder, 'get_feature_names_out'):
-                                feature_names = encoder.get_feature_names_out(categorical_features)
-                                feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
-                                st.write("Debug: Cleaned feature names from encoder:", feature_names)
-                            else:
-                                feature_names = [f"{col}_{val}" for col in categorical_features for val in categorical_options.get(col, []) if val != categorical_options.get(col, [])[0]]
-                                feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
-                                st.write("Debug: Cleaned manual feature names:", feature_names)
-                    except AttributeError as e:
-                        st.warning(f"⚠️ Could not extract feature names automatically: {str(e)}. Using required_features as fallback.")
-                        feature_names = required_features
-                    # Ensure feature_names length matches shap_values
-                    if len(feature_names) != shap_values.shape[1]:
-                        st.warning(f"⚠️ Mismatch between feature names length ({len(feature_names)}) and SHAP values shape ({shap_values.shape[1]}). Using required_features.")
-                        feature_names = required_features[:shap_values.shape[1]]
-                    shap_df = pd.DataFrame({'Feature': feature_names, 'SHAP Value': shap_values[0]})
-                    shap_df['Absolute SHAP Value'] = shap_df['SHAP Value'].abs()
-                    shap_df = shap_df.sort_values(by='Absolute SHAP Value', ascending=False)
+                            st.write("Debug: Cleaned feature names from encoder:", feature_names)
+                        else:
+                            feature_names = [f"{col}_{val}" for col in categorical_features for val in categorical_options.get(col, []) if val != categorical_options.get(col, [])[0]]
+                            st.write("Debug: Raw manual feature names:", feature_names)
+                            feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
+                            st.write("Debug: Cleaned manual feature names:", feature_names)
+                except AttributeError as e:
+                    st.warning(f"⚠️ Could not extract feature names automatically: {str(e)}. Using required_features as fallback.")
+                    feature_names = required_features[:shap_values.shape[1]]
+            # Ensure feature_names length matches shap_values
+                if len(feature_names) != shap_values.shape[1]:
+                    st.warning(f"⚠️ Mismatch between feature names length ({len(feature_names)}) and SHAP values shape ({shap_values.shape[1]}). Using required_features.")
+                    feature_names = required_features[:shap_values.shape[1]]
 
-                    st.markdown("#### 📋 Top Features Contributing to the Prediction")
-                    st.write(shap_df.head(10))
+                shap_df = pd.DataFrame({'Feature': feature_names, 'SHAP Value': shap_values[0]})
+                shap_df['Absolute SHAP Value'] = shap_df['SHAP Value'].abs()
+                shap_df = shap_df.sort_values(by='Absolute SHAP Value', ascending=False)
 
-                    fig = px.bar(shap_df.head(10), x='SHAP Value', y='Feature', orientation='h',
-                                 title="Top 10 Features Contributing to Churn Prediction",
-                                 color='SHAP Value', color_continuous_scale='Blues')
-                    fig.update_layout(yaxis={'autorange': 'reversed'}, showlegend=False)
-                    st.plotly_chart(fig, use_container_width=True)
+                st.markdown("#### 📋 Top Features Contributing to the Prediction")
+                st.write(shap_df.head(10))
 
-                    st.markdown("#### 📊 SHAP Force Plot")
-                    shap.initjs()
-                    plt.figure()
-                    shap.force_plot(explainer.expected_value, shap_values[0], preprocessed_user_input[0],
-                                   feature_names=feature_names, matplotlib=True, show=False)
-                    st.pyplot(plt.gcf())
+                fig = px.bar(shap_df.head(10), x='SHAP Value', y='Feature', orientation='h',
+                            title="Top 10 Features Contributing to Churn Prediction",
+                            color='SHAP Value', color_continuous_scale='Blues')
+                fig.update_layout(yaxis={'autorange': 'reversed'}, showlegend=False)
+                st.plotly_chart(fig, use_container_width=True)
+
+                st.markdown("#### 📊 SHAP Force Plot")
+                shap.initjs()
+                plt.figure()
+                shap.force_plot(explainer.expected_value, shap_values[0], preprocessed_user_input[0],
+                            feature_names=feature_names, matplotlib=True, show=False)
+                st.pyplot(plt.gcf()) 
 
                 report_content = {
                     "Prediction Result": f"Customer is {'likely' if prediction[0] == 1 else 'not likely'} to churn with a probability of {prediction_proba[0]:.2%}.",

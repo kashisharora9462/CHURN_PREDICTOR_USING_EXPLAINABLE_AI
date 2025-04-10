@@ -417,27 +417,21 @@ def predict_churn_for_user_input(model, preprocessor):
 
                     # Robust feature name extraction
                     feature_names = required_features  # Default fallback
-                try:
-                    if hasattr(preprocessor, 'get_feature_names_out'):
-                        feature_names = preprocessor.get_feature_names_out()
-                        st.write("Debug: Raw feature names from preprocessor:", feature_names)
+            try:
+                if hasattr(preprocessor, 'get_feature_names_out'):
+                    feature_names = preprocessor.get_feature_names_out()
+                    feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
+                elif hasattr(preprocessor, 'named_transformers_') and 'cat' in preprocessor.named_transformers_:
+                    encoder = preprocessor.named_transformers_['cat']
+                    if hasattr(encoder, 'get_feature_names_out'):
+                        feature_names = encoder.get_feature_names_out(categorical_features)
                         feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
-                        st.write("Debug: Cleaned feature names from preprocessor:", feature_names)
-                    elif hasattr(preprocessor, 'named_transformers_') and 'cat' in preprocessor.named_transformers_:
-                        encoder = preprocessor.named_transformers_['cat']
-                        if hasattr(encoder, 'get_feature_names_out'):
-                            feature_names = encoder.get_feature_names_out(categorical_features)
-                            st.write("Debug: Raw feature names from encoder:", feature_names)
-                            feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
-                            st.write("Debug: Cleaned feature names from encoder:", feature_names)
-                        else:
-                            feature_names = [f"{col}_{val}" for col in categorical_features for val in categorical_options.get(col, []) if val != categorical_options.get(col, [])[0]]
-                            st.write("Debug: Raw manual feature names:", feature_names)
-                            feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
-                            st.write("Debug: Cleaned manual feature names:", feature_names)
-                except AttributeError as e:
-                    st.warning(f"⚠️ Could not extract feature names automatically: {str(e)}. Using required_features as fallback.")
-                    feature_names = required_features[:shap_values.shape[1]]
+                    else:
+                        feature_names = [f"{col}_{val}" for col in categorical_features for val in categorical_options.get(col, []) if val != categorical_options.get(col, [])[0]]
+                        feature_names = [name.encode('utf-8', errors='replace').decode('utf-8') for name in feature_names]
+            except Exception as e:
+                st.warning(f"⚠️ Could not extract feature names automatically due to encoding issue: {str(e)}. Using required_features as fallback.")
+                feature_names = required_features[:shap_values.shape[1]]
             # Ensure feature_names length matches shap_values
                 if len(feature_names) != shap_values.shape[1]:
                     st.warning(f"⚠️ Mismatch between feature names length ({len(feature_names)}) and SHAP values shape ({shap_values.shape[1]}). Using required_features.")

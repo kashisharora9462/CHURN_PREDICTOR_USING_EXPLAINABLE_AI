@@ -341,8 +341,8 @@ def precompute_steps():
     explain_model(model, X_test, preprocessor)
     print("Step 8: SHAP outputs saved.")
     
-    joblib.dump(model, MODEL_PATH)
-    joblib.dump(preprocessor, PREPROCESSOR_PATH)
+    joblib.dump(model, MODEL_PATH,compress=3)
+    joblib.dump(preprocessor, PREPROCESSOR_PATH,compress=3)
     print(f"Model saved to {MODEL_PATH}")
     print(f"Preprocessor saved to {PREPROCESSOR_PATH}")
 

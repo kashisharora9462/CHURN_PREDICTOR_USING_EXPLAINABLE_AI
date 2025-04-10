@@ -24,8 +24,8 @@ from reportlab.pdfgen import canvas
 warnings.filterwarnings('ignore')
 np.random.seed(42)
 
-MODEL_PATH = "xgboost_model.joblib"
-PREPROCESSOR_PATH = "preprocessor.joblib"
+MODEL_PATH = "Scripts/xgboost_model.joblib"
+PREPROCESSOR_PATH = "Scripts/preprocessor.joblib"
 DATASET_PATH = "../Data/Raw/dataset.csv"
 
 # Step 1: Data Loading and Exploration

@@ -24,43 +24,43 @@ from reportlab.pdfgen import canvas
 warnings.filterwarnings('ignore')
 np.random.seed(42)
 
-MODEL_PATH = "xgboost_model.joblib"
-PREPROCESSOR_PATH = "preprocessor.joblib"
-DATASET_PATH = "../Data/Raw/dataset.csv"
+MODEL_PATH = "Scripts/xgboost_model.joblib"
+PREPROCESSOR_PATH = "Scripts/preprocessor.joblib"
+DATASET_PATH = "Data/Raw/dataset.csv"
 
 # Step 1: Data Loading and Exploration
-DATA_HEAD_PATH = "../Data/Output/data_head.csv"
-DATA_TYPES_PATH = "../Data/Output/data_types.csv"
-MISSING_VALUES_PATH = "../Data/Output/missing_values.csv"
-DUPLICATES_PATH = "../Data/Output/duplicates.txt"
-SUMMARY_STATS_PATH = "../Data/Output/summary_stats.csv"
-CHURN_DISTRIBUTION_PATH = "../Data/Output/churn_distribution.csv"
+DATA_HEAD_PATH = "Data/Output/data_head.csv"
+DATA_TYPES_PATH = "Data/Output/data_types.csv"
+MISSING_VALUES_PATH = "Data/Output/missing_values.csv"
+DUPLICATES_PATH = "Data/Output/duplicates.txt"
+SUMMARY_STATS_PATH = "Data/Output/summary_stats.csv"
+CHURN_DISTRIBUTION_PATH = "Data/Output/churn_distribution.csv"
 
 # Step 2: Data Preprocessing
-PREPROCESSING_LOG_PATH = "../Logs/preprocessing_log.txt"
+PREPROCESSING_LOG_PATH = "Logs/preprocessing_log.txt"
 
 # Step 3: EDA
-CHURN_DISTRIBUTION_PLOT_PATH = "../Plots/churn_distribution_plot.png"
-CHURN_BY_GENDER_PLOT_PATH = "../Plots/churn_by_gender_plot.png"
-CHURN_BY_SENIOR_CITIZEN_PLOT_PATH = "../Plots/churn_by_senior_citizen_plot.png"
-CHURN_BY_CONTRACT_PLOT_PATH = "../Plots/churn_by_contract_plot.png"
-CORRELATION_MATRIX_PLOT_PATH = "../Plots/correlation_matrix_plot.png"
+CHURN_DISTRIBUTION_PLOT_PATH = "Plots/churn_distribution_plot.png"
+CHURN_BY_GENDER_PLOT_PATH = "Plots/churn_by_gender_plot.png"
+CHURN_BY_SENIOR_CITIZEN_PLOT_PATH = "Plots/churn_by_senior_citizen_plot.png"
+CHURN_BY_CONTRACT_PLOT_PATH = "Plots/churn_by_contract_plot.png"
+CORRELATION_MATRIX_PLOT_PATH = "Plots/correlation_matrix_plot.png"
 
 # Step 4: Feature Engineering
-FEATURE_ENGINEERING_LOG_PATH = "../Logs/feature_engineering_log.txt"
+FEATURE_ENGINEERING_LOG_PATH = "Logs/feature_engineering_log.txt"
 
 # Step 5: Model Training
-TRAINING_LOG_PATH = "../Logs/training_log.txt"
+TRAINING_LOG_PATH = "Logs/training_log.txt"
 
 # Step 6: Model Evaluation
-EVALUATION_METRICS_PATH = "../Logs/evaluation_metrics.txt"
-CONFUSION_MATRIX_PLOT_PATH = "../Plots/confusion_matrix_plot.png"
-ROC_CURVE_PLOT_PATH = "../Plots/roc_curve_plot.png"
+EVALUATION_METRICS_PATH = "Logs/evaluation_metrics.txt"
+CONFUSION_MATRIX_PLOT_PATH = "Plots/confusion_matrix_plot.png"
+ROC_CURVE_PLOT_PATH = "Plots/roc_curve_plot.png"
 
 # Step 7: SHAP Explainability
-SHAP_SUMMARY_PATH = "../Plots/shap_summary_plot.png"
-SHAP_IMPORTANCE_PATH = "../Plots/shap_importance_plot.png"
-FEATURE_IMPORTANCE_PATH = "../Data/Output/feature_importance.csv"
+SHAP_SUMMARY_PATH = "Plots/shap_summary_plot.png"
+SHAP_IMPORTANCE_PATH = "Plots/shap_importance_plot.png"
+FEATURE_IMPORTANCE_PATH = "Data/Output/feature_importance.csv"
 
 @st.cache_resource
 def load_model_and_preprocessor():

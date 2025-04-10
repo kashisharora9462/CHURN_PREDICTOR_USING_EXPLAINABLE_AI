@@ -1,6 +1,6 @@
 streamlit
 pandas
-numpy==1.21.6  # Try this if 1.23.5 is slow to build
+numpy==1.26.4  # Try this if 1.23.5 is slow to build
 matplotlib
 plotly
 shap==0.42.1

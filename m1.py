@@ -301,6 +301,13 @@ def predict_churn_for_user_input(model, preprocessor):
         'StreamingMovies', 'Contract', 'PaperlessBilling', 'PaymentMethod',
         'MonthlyCharges', 'TotalCharges', 'AvgMonthlyCost', 'HighRisk', 'ChargePerTenure', 'TenureBin'
     ]
+
+    # Define categorical and numeric features
+    categorical_features = ['gender', 'SeniorCitizen', 'Partner', 'Dependents', 'PhoneService',
+                           'MultipleLines', 'InternetService', 'OnlineSecurity', 'OnlineBackup',
+                           'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies',
+                           'Contract', 'PaperlessBilling', 'PaymentMethod', 'TenureBin']
+    numeric_features = ['tenure', 'MonthlyCharges', 'TotalCharges']
     st.info(f"📋 Dataset expects {len(required_features)} input features: {required_features}")
 
     categorical_options = {

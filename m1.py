@@ -410,8 +410,24 @@ def predict_churn_for_user_input(model, preprocessor):
                     if len(shap_values.shape) == 1:
                         shap_values = shap_values.reshape(1, -1)
 
-                    feature_names = preprocessor.get_feature_names_out()
-                    feature_names = [name.split('__')[-1] for name in feature_names]
+                    # Robust feature name extraction
+                    feature_names = required_features  # Default fallback
+                    try:
+                        if hasattr(preprocessor, 'get_feature_names_out'):
+                            feature_names = preprocessor.get_feature_names_out()
+                        elif hasattr(preprocessor, 'named_transformers_') and 'cat' in preprocessor.named_transformers_:
+                            encoder = preprocessor.named_transformers_['cat']
+                            if hasattr(encoder, 'get_feature_names_out'):
+                                feature_names = encoder.get_feature_names_out(categorical_features)
+                            else:
+                                feature_names = [f"{col}_{val}" for col in categorical_features for val in categorical_options.get(col, []) if val != categorical_options.get(col, [])[0]]  # Manual encoding
+                    except AttributeError as e:
+                        st.warning(f"⚠️ Could not extract feature names automatically: {str(e)}. Using required_features as fallback.")
+
+                    # Ensure feature_names length matches shap_values
+                    if len(feature_names) != shap_values.shape[1]:
+                        st.warning(f"⚠️ Mismatch between feature names length ({len(feature_names)}) and SHAP values shape ({shap_values.shape[1]}). Using required_features.")
+                        feature_names = required_features[:shap_values.shape[1]]
                     shap_df = pd.DataFrame({'Feature': feature_names, 'SHAP Value': shap_values[0]})
                     shap_df['Absolute SHAP Value'] = shap_df['SHAP Value'].abs()
                     shap_df = shap_df.sort_values(by='Absolute SHAP Value', ascending=False)

@@ -14,4 +14,4 @@ initialSidebarState = "expanded"
 
 [general]
 # This makes Streamlit Cloud run from the main folder
-scriptPath = "main/m1.py"
+scriptPath = "Scripts/m1.py"

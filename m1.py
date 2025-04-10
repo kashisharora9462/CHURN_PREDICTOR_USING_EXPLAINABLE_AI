@@ -70,8 +70,6 @@ def load_model_and_preprocessor():
     try:
         model = joblib.load(MODEL_PATH)
         preprocessor = joblib.load(PREPROCESSOR_PATH)
-        st.write("Debug: Preprocessor type:", type(preprocessor))  # Debug
-        st.write("Debug: Preprocessor steps:", preprocessor.steps if hasattr(preprocessor, 'steps') else "No steps")  # Debug
         classifier = model.named_steps['model']  # Assuming model is a Pipeline
         return classifier, preprocessor
     except Exception as e:

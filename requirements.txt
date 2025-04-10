@@ -9,7 +9,7 @@ streamlit>=1.22.0
 xgboost
 
 # Machine learning and model persistence
-scikit-learn>=1.2.0
+scikit-learn==1.2.2
 joblib>=1.2.0
 
 # SHAP for explainability

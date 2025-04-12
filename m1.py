@@ -475,7 +475,7 @@ def predict_churn_for_user_input(model, preprocessor):
             try:
                 df_uploaded = pd.read_excel(uploaded_file)
                 st.success(f"✅ Successfully loaded {df_uploaded.shape[0]} customer records.")
-                required_columns = set(required_features[:-3])  # Exclude engineered features
+                required_columns = set(required_features[:-3])  # Base columns
                 uploaded_columns = set(df_uploaded.columns)
                 missing_columns = required_columns - uploaded_columns
                 extra_columns = uploaded_columns - required_columns
@@ -485,7 +485,6 @@ def predict_churn_for_user_input(model, preprocessor):
                 if extra_columns:
                     st.warning(f"⚠️ Extra columns found and will be ignored: {', '.join(extra_columns)}")
                     df_uploaded = df_uploaded.drop(columns=list(extra_columns))
-
                 df_uploaded = preprocess_data(df_uploaded, required_features)
                 preprocessed_data = preprocessor.transform(df_uploaded)
                 if hasattr(preprocessed_data, 'toarray'):

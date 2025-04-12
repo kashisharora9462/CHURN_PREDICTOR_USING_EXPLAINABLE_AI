@@ -1,6 +1,6 @@
 Best Threshold: 0.7977
 Accuracy: 0.8585
-Precision: 0.6776
-Recall: 0.5077
-F1 Score: 0.5732
+Precision: 0.72
+Recall: 0.5143
+F1 Score: 0.6105
 ROC-AUC: 0.8228

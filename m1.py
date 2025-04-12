@@ -500,6 +500,8 @@ def predict_churn_for_user_input(model, preprocessor):
                                   file_name="churn_prediction_report.pdf", mime="application/pdf")
             except Exception as e:
                 st.error(f"❌ Error during prediction: {str(e)}")
+            if st.button("🏠 Back to Home"):
+                st.session_state.page = "home"
 
     elif prediction_type == "Batch Prediction":
         st.markdown("### 📂 Batch Prediction: Upload Customer Data File")

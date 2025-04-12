@@ -485,7 +485,15 @@ def predict_churn_for_user_input(model, preprocessor):
                 if extra_columns:
                     st.warning(f"⚠️ Extra columns found and will be ignored: {', '.join(extra_columns)}")
                     df_uploaded = df_uploaded.drop(columns=list(extra_columns))
+
+                # Preprocess the data to include engineered features
                 df_uploaded = preprocess_data(df_uploaded, required_features)
+                st.write("Columns after preprocessing:", df_uploaded.columns.tolist())  # Debug output
+
+                # Reorder columns to match required_features
+                df_uploaded = df_uploaded[required_features]
+
+                # Transform the data
                 preprocessed_data = preprocessor.transform(df_uploaded)
                 if hasattr(preprocessed_data, 'toarray'):
                     preprocessed_data = preprocessed_data.toarray()
@@ -518,12 +526,11 @@ def predict_churn_for_user_input(model, preprocessor):
                 st.dataframe(results_df)
                 csv = results_df.to_csv(index=False)
                 st.download_button(label="📥 Download Prediction Results (CSV)", data=csv,
-                                  file_name="churn_predictions.csv", mime="text/csv")
+                                file_name="churn_predictions.csv", mime="text/csv")
             except Exception as e:
                 st.error(f"❌ Error processing uploaded file: {str(e)}")
-
-    if st.button("🏠 Back to Home"):
-        st.session_state.page = "home"
+        if st.button("🏠 Back to Home"):
+            st.session_state.page = "home"
 
 def display_model_insights():
     st.markdown("## 🔍 Model Insights")

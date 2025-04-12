@@ -519,10 +519,10 @@ def predict_churn_for_user_input(model, preprocessor):
             try:
                 df_uploaded = pd.read_excel(uploaded_file)
                 st.success(f"✅ Successfully loaded {df_uploaded.shape[0]} customer records.")
-                required_columns = set(required_features[:-3])  # Base columns
+                required_base_columns = set(required_features[:-3])  # Base columns only
                 uploaded_columns = set(df_uploaded.columns)
-                missing_columns = required_columns - uploaded_columns
-                extra_columns = uploaded_columns - required_columns
+                missing_columns = required_base_columns - uploaded_columns
+                extra_columns = uploaded_columns - required_base_columns
                 if missing_columns:
                     st.error(f"❌ Missing required columns: {', '.join(missing_columns)}")
                     return
@@ -533,6 +533,15 @@ def predict_churn_for_user_input(model, preprocessor):
                 # Preprocess the data to include engineered features
                 df_uploaded = preprocess_data(df_uploaded, required_features)
                 st.write("Columns after preprocessing:", df_uploaded.columns.tolist())  # Debug output
+
+                # Ensure all required features are present before transformation
+                for col in required_features:
+                    if col not in df_uploaded.columns:
+                        st.warning(f"Adding missing column {col} with default value")
+                        df_uploaded[col] = 0 if col in numeric_features else df_uploaded[categorical_features[0]].mode()[0]
+
+                # Reorder columns to match required_features
+                df_uploaded = df_uploaded[required_features]
 
                 # Transform the data
                 preprocessed_data = preprocessor.transform(df_uploaded)

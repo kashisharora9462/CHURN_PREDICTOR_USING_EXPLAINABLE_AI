@@ -255,37 +255,32 @@ def display_step_8():
 
 def preprocess_data(df, required_features):
     df_processed = df.copy()
-    st.write("Input columns before processing:", df_processed.columns.tolist())  # Debug: Input columns
+
 
     # Handle TotalCharges conversion
     if 'TotalCharges' in df_processed.columns:
         if df_processed['TotalCharges'].dtype == 'object':
             df_processed['TotalCharges'] = pd.to_numeric(df_processed['TotalCharges'], errors='coerce')
-            st.write("Converted TotalCharges to numeric, NaN count:", df_processed['TotalCharges'].isna().sum())  # Debug: NaN check
         if df_processed['TotalCharges'].isna().any():
             df_processed['TotalCharges'].fillna(df_processed['TotalCharges'].median(), inplace=True)
-            st.write("Filled NaN TotalCharges with median:", df_processed['TotalCharges'].median())  # Debug: Filled value
 
     # Handle numeric columns
     numeric_cols = df_processed.select_dtypes(include=['number']).columns.intersection(required_features)
     for col in numeric_cols:
         if df_processed[col].isna().any():
             df_processed[col].fillna(df_processed[col].median(), inplace=True)
-            st.write(f"Filled NaN in {col} with median:", df_processed[col].median())  # Debug: Filled value
-    st.write("Numeric columns after filling:", numeric_cols.tolist())  # Debug: Numeric columns
+            
+    
 
     # Handle categorical columns
     categorical_cols = df_processed.select_dtypes(include=['object']).columns.intersection(required_features)
     for col in categorical_cols:
         if df_processed[col].isna().any():
             df_processed[col].fillna(df_processed[col].mode()[0], inplace=True)
-            st.write(f"Filled NaN in {col} with mode:", df_processed[col].mode()[0])  # Debug: Filled value
-    st.write("Categorical columns after filling:", categorical_cols.tolist())  # Debug: Categorical columns
-
+            
     # Ensure SeniorCitizen is categorical
     if 'SeniorCitizen' in df_processed.columns:
         df_processed['SeniorCitizen'] = df_processed['SeniorCitizen'].map({0: 'No', 1: 'Yes', 'No': 'No', 'Yes': 'Yes'})
-        st.write("SeniorCitizen mapped:", df_processed['SeniorCitizen'].unique())  # Debug: Mapped values
 
     # Drop customerID if present
     if 'customerID' in df_processed.columns:
@@ -294,22 +289,18 @@ def preprocess_data(df, required_features):
     # Add engineered features
     if 'TotalCharges' in df_processed.columns and 'tenure' in df_processed.columns:
         df_processed['AvgMonthlyCost'] = df_processed['TotalCharges'] / (df_processed['tenure'] + 1)
-        st.write("AvgMonthlyCost computed, min/max:", [df_processed['AvgMonthlyCost'].min(), df_processed['AvgMonthlyCost'].max()])  # Debug: Check computation
     else:
         st.error("Required columns 'TotalCharges' or 'tenure' missing for AvgMonthlyCost computation")
 
     df_processed['HighRisk'] = ((df_processed['SeniorCitizen'] == 'Yes') & (df_processed['Contract'] == 'Month-to-month')).astype(int)
-    st.write("HighRisk computed, unique values:", df_processed['HighRisk'].unique())  # Debug: Check computation
 
     if 'MonthlyCharges' in df_processed.columns and 'tenure' in df_processed.columns:
         df_processed['ChargePerTenure'] = df_processed['MonthlyCharges'] * df_processed['tenure']
-        st.write("ChargePerTenure computed, min/max:", [df_processed['ChargePerTenure'].min(), df_processed['ChargePerTenure'].max()])  # Debug: Check computation
     else:
         st.error("Required columns 'MonthlyCharges' or 'tenure' missing for ChargePerTenure computation")
 
     df_processed['TenureBin'] = pd.cut(df_processed['tenure'], bins=[0, 12, 24, 36, 48, 60, 100], 
                                      labels=['0-1yr', '1-2yr', '2-3yr', '3-4yr', '4-5yr', '5+yr'])
-    st.write("TenureBin computed, unique values:", df_processed['TenureBin'].unique())  # Debug: Check computation
 
     # Ensure object columns are strings
     object_cols = df_processed.select_dtypes(include=['object']).columns.intersection(required_features)
@@ -322,7 +313,6 @@ def preprocess_data(df, required_features):
         for col in missing_cols:
             df_processed[col] = 0 if col in numeric_cols else df_processed[categorical_cols[0]].mode()[0]
 
-    st.write("Columns after all processing:", df_processed.columns.tolist())  # Debug: Final columns
     return df_processed[required_features]
 
 def predict_churn_for_user_input(model, preprocessor):

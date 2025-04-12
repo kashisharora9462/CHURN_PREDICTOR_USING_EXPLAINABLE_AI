@@ -532,7 +532,6 @@ def predict_churn_for_user_input(model, preprocessor):
 
                 # Preprocess the data to include engineered features
                 df_uploaded = preprocess_data(df_uploaded, required_features)
-                st.write("Columns after preprocessing:", df_uploaded.columns.tolist())  # Debug output
 
                 # Verify all required features are present after preprocessing
                 missing_after_preprocess = set(required_features) - set(df_uploaded.columns)

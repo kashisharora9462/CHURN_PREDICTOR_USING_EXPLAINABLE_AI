@@ -519,10 +519,20 @@ def predict_churn_for_user_input(model, preprocessor):
             try:
                 df_uploaded = pd.read_excel(uploaded_file)
                 st.success(f"✅ Successfully loaded {df_uploaded.shape[0]} customer records.")
-                required_base_columns = set(required_features[:-3])  # Base columns only
+                
+                # Define base required columns (excluding engineered ones)
+                required_base_columns = [
+                    'gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure',
+                    'PhoneService', 'MultipleLines', 'InternetService', 'OnlineSecurity',
+                    'OnlineBackup', 'DeviceProtection', 'TechSupport', 'StreamingTV',
+                    'StreamingMovies', 'Contract', 'PaperlessBilling', 'PaymentMethod',
+                    'MonthlyCharges', 'TotalCharges'
+                ]
+                
                 uploaded_columns = set(df_uploaded.columns)
-                missing_columns = required_base_columns - uploaded_columns
-                extra_columns = uploaded_columns - required_base_columns
+                missing_columns = set(required_base_columns) - uploaded_columns
+                extra_columns = uploaded_columns - set(required_base_columns)
+                
                 if missing_columns:
                     st.error(f"❌ Missing required columns: {', '.join(missing_columns)}")
                     return
@@ -534,11 +544,15 @@ def predict_churn_for_user_input(model, preprocessor):
                 df_uploaded = preprocess_data(df_uploaded, required_features)
                 st.write("Columns after preprocessing:", df_uploaded.columns.tolist())  # Debug output
 
-                # Ensure all required features are present before transformation
-                for col in required_features:
-                    if col not in df_uploaded.columns:
-                        st.warning(f"Adding missing column {col} with default value")
-                        df_uploaded[col] = 0 if col in numeric_features else df_uploaded[categorical_features[0]].mode()[0]
+                # Verify all required features are present after preprocessing
+                missing_after_preprocess = set(required_features) - set(df_uploaded.columns)
+                if missing_after_preprocess:
+                    st.warning(f"⚠️ Missing columns after preprocessing: {missing_after_preprocess}")
+                    for col in missing_after_preprocess:
+                        if col in numeric_features:
+                            df_uploaded[col] = 0
+                        else:
+                            df_uploaded[col] = df_uploaded[categorical_features[0]].mode()[0]
 
                 # Reorder columns to match required_features
                 df_uploaded = df_uploaded[required_features]
@@ -559,7 +573,7 @@ def predict_churn_for_user_input(model, preprocessor):
                 feature_names = preprocessor.get_feature_names_out()
                 feature_names = [name.split('__')[-1] for name in feature_names]
                 results_df = pd.DataFrame({
-                    'Customer ID': df_uploaded['customerID'] if 'customerID' in df_uploaded.columns else range(len(predictions)),
+                    'Customer ID': df_uploaded.index if 'customerID' not in df_uploaded.columns else df_uploaded['customerID'],
                     'Churn Prediction': ['Yes' if pred == 1 else 'No' for pred in predictions],
                     'Churn Probability': [f"{prob:.2%}" for prob in prediction_probs]
                 })

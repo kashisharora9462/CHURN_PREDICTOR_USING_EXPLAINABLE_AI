@@ -54,7 +54,7 @@ SHAP_FORCE_PLOT_PATH = "shap_force_plot.html"  # Changed to .html for interactiv
 
 # Existing functions (unchanged except where noted)
 def load_and_explore_data(df):
-    df.head().to_csv(DATA_HEAD_PATH, index=False)
+    df.head().to_csv(DATA_HEAD_PATH, index=False,encoding='utf-8')
     dtypes_df = pd.DataFrame(df.dtypes.astype(str), columns=['Data Type'])
     dtypes_df.to_csv(DATA_TYPES_PATH)
     missing_df = pd.DataFrame(df.isnull().sum().astype(str), columns=['Missing Values'])
@@ -314,7 +314,7 @@ def explain_model(model, X_test, preprocessor):
     feature_importance.to_csv(FEATURE_IMPORTANCE_PATH, index=False)
 
 def precompute_steps():
-    df = pd.read_csv(DATASET_PATH)
+    df = pd.read_csv(DATASET_PATH ,encoding='latin-1')
     print(f"Loaded dataset with {df.shape[0]} rows and {df.shape[1]} columns.")
     
     load_and_explore_data(df)

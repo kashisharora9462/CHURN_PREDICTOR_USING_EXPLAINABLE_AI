@@ -93,7 +93,3 @@ streamlit run Scripts/m1.py
 ## Author
 - Kashish Ahuja
 - Contact: kashish.ahuja22b@iiitg.ac.in
-
-## License
-This project is licensed under the MIT License 
-

@@ -79,6 +79,17 @@ streamlit run Scripts/m1.py
   - **Model Insights**: Explore data preprocessing, EDA, model evaluation, SHAP explainability, and business recommendations.
   - **Predict Churn**: Manually enter customer details or upload a batch file to predict churn probability.
 
+## View
+
+<img width="1910" height="1018" alt="image" src="https://github.com/user-attachments/assets/513fb912-c72a-46ab-b0b3-a67e40ec26e0" />
+
+<img width="1918" height="942" alt="image" src="https://github.com/user-attachments/assets/a0256c33-3c3f-4eee-88f5-35730390a05a" />
+
+<img width="1916" height="973" alt="image" src="https://github.com/user-attachments/assets/1917ef7f-d676-4b5b-b098-adf059cda25c" />
+
+<img width="1918" height="1075" alt="image" src="https://github.com/user-attachments/assets/db3b5798-c4ed-4e6f-a3ae-2077d58845b2" />
+
+
 ## Usage
 ### Model Insights
 - View machine learning pipeline steps (data loading, preprocessing, EDA, etc.).
